@@ -1,9 +1,39 @@
 import * as React from 'react';
 import { Text, View, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import { FileSystemUploadType } from 'expo-file-system';
+import { useState } from 'react';
 
 export default function App() {
+  const [image, setImage] = useState("https://cdn.sick.com/media/ZOOM/2/82/782/IM0077782.png");
+  const [text, setText] = useState("Pick an image"); 
+
   const handleOcr = async () => {
     console.log('handleOcr');
+    const result = await ImagePicker.launchImageLibraryAsync();
+    console.log(result);
+
+    if(!result.cancelled) {
+      setImage(result.uri);
+      // const resp = await FileSystem.uploadAsync("http://192.168.0.2:8007/binary-upload", result.uri, { 
+      //   uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT, sessionType: FileSystem.FileSystemSessionType.BACKGROUND,
+      //       httpMethod: "PATCH",fieldName: `photo`,
+      // })
+
+      const resp = await FileSystem.uploadAsync("http://192.168.0.22:8007/multipart-upload", result.uri, {
+          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'multipart/form-data',
+          },
+          sessionType: FileSystem.FileSystemSessionType.BACKGROUND,
+          httpMethod: "PATCH",
+          fieldName: `photo`,
+        });
+      console.log("resp: "+JSON.stringify(resp));
+
+    };
   };
 
   return (
@@ -12,7 +42,7 @@ export default function App() {
         <Image
           style={styles.card_image}
           source={{
-            uri: 'https://cdn.sick.com/media/ZOOM/2/82/782/IM0077782.png',
+            uri: image
           }}
         />
         <View style={styles.text_container}>
